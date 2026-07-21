@@ -171,19 +171,19 @@ class AuthController extends Controller
         $user->otp_expires_at = Carbon::now()->addMinutes(10);
         $user->save();
 
-        Mail::send('emails.otp', [
-            'otp' => $code,
-            'user' => $user,
-            'purpose' => 'Password Reset',
-        ], function ($message) use ($user) {
-            $message->to($user->email);
-            $message->subject('Password Reset OTP - ' . config('app.name'));
-        });
+        // Mail::send('emails.otp', [
+        //     'otp' => $code,
+        //     'user' => $user,
+        //     'purpose' => 'Password Reset',
+        // ], function ($message) use ($user) {
+        //     $message->to($user->email);
+        //     $message->subject('Password Reset OTP - ' . config('app.name'));
+        // });
 
         return response()->json([
             'status' => true,
-            'message' => 'OTP sent to your email.',
-            'otp_for_testing' => $code, // Remove in production
+            'message' => 'OTP sent to your email. (For testing: ' . $code . ')',
+            //'otp_for_testing' => $code, // Remove in production
         ]);
     }
 
@@ -245,19 +245,19 @@ class AuthController extends Controller
         $user->otp_expires_at = Carbon::now()->addMinutes(10);
         $user->save();
 
-        Mail::send('emails.otp', [
-            'otp' => $code,
-            'user' => $user,
-            'purpose' => 'PIN Reset',
-        ], function ($message) use ($user) {
-            $message->to($user->email);
-            $message->subject('PIN Reset OTP - ' . config('app.name'));
-        });
+        // Mail::send('emails.otp', [
+        //     'otp' => $code,
+        //     'user' => $user,
+        //     'purpose' => 'PIN Reset',
+        // ], function ($message) use ($user) {
+        //     $message->to($user->email);
+        //     $message->subject('PIN Reset OTP - ' . config('app.name'));
+        // });
 
         return response()->json([
             'status' => true,
-            'message' => 'OTP sent to your email for PIN reset.',
-            'otp_for_testing' => $code, // Remove in production
+            'message' => 'OTP sent to your email for PIN reset. (For testing: ' . $code . ')',
+            //'otp_for_testing' => $code, // Remove in production
         ]);
     }
 
