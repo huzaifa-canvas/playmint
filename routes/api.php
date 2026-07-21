@@ -24,10 +24,13 @@ Route::post('/verify-reset-password', [AuthController::class, 'verifyAndResetPas
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    // Authenticated Password Reset
+    Route::post('/user/reset-password', [AuthController::class, 'resetPassword']);
 
     // Parent PIN
     Route::post('/user/set-pin', [AuthController::class, 'setPin']);
     Route::post('/user/verify-pin', [AuthController::class, 'verifyPin']);
+    Route::post('/user/reset-pin', [AuthController::class, 'resetPin']);
 
     // OTP-based Forgot PIN (auth needed, user must be logged in)
     Route::post('/forgot-pin', [AuthController::class, 'forgotPin']);

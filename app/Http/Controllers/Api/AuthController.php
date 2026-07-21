@@ -293,4 +293,64 @@ class AuthController extends Controller
 
         return response()->json(['status' => true, 'message' => 'Parent PIN reset successfully.']);
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // AUTHENTICATED RESET / CHANGE (Password & PIN)
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * Reset/Change password for authenticated user using current password.
+     */
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        $user = $request->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json(['status' => false, 'message' => 'Current password does not match.'], 422);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return response()->json(['status' => true, 'message' => 'Password updated successfully.']);
+    }
+
+    /**
+     * Reset/Change Parent PIN for authenticated user using current PIN.
+     */
+    public function resetPin(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'current_pin' => 'required|digits_between:4,6',
+            'pin' => 'required|digits_between:4,6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'errors' => $validator->errors()], 422);
+        }
+
+        $user = $request->user();
+
+        if (!$user->parent_pin) {
+            return response()->json(['status' => false, 'message' => 'Parent PIN has not been set yet.'], 400);
+        }
+
+        if (!Hash::check($request->current_pin, $user->parent_pin)) {
+            return response()->json(['status' => false, 'message' => 'Current PIN does not match.'], 422);
+        }
+
+        $user->parent_pin = Hash::make($request->pin);
+        $user->save();
+
+        return response()->json(['status' => true, 'message' => 'Parent PIN updated successfully.']);
+    }
 }
