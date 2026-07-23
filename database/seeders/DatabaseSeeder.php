@@ -22,6 +22,8 @@ class DatabaseSeeder extends Seeder
         );
 
         // Optional: create some fake users
-        // User::factory(10)->create();
+        $this->call([
+            QuizSeeder::class,
+        ]);
     }
 }

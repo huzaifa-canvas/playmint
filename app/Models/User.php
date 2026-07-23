@@ -51,6 +51,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
     }
 
@@ -64,5 +65,10 @@ class User extends Authenticatable
         }
 
         return asset('assets/img/avatars/1.png');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Child::class);
     }
 }

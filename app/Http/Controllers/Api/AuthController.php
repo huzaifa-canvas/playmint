@@ -35,6 +35,7 @@ class AuthController extends Controller
             'status' => true,
             'message' => 'Registration successful.',
             'user' => $user,
+            'has_pin_set' => !is_null($user->parent_pin),
             'token' => $token,
         ], 201);
     }
@@ -61,6 +62,7 @@ class AuthController extends Controller
         return response()->json([
             'status' => true,
             'user' => $user,
+            'has_pin_set' => !is_null($user->parent_pin),
             'token' => $token,
         ]);
     }

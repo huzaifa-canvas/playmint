@@ -19,10 +19,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(LocaleMiddleware::class);
         $middleware->api(ForceJsonResponse::class);
         
+        $middleware->alias([
+            'is_admin' => \App\Http\Middleware\IsAdmin::class,
+        ]);
+
         $middleware->redirectGuestsTo(function (Request $request) {
-            if ($request->is('admin*')) {
-                return route('admin.login');
-            }
             return route('login');
         });
     })

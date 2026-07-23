@@ -11,6 +11,30 @@
       "icon": "menu-icon icon-base ti tabler-users",
       "slug": "app-user",
       "url": "/admin/user/list"
+    },
+    {
+      "name": "Avatars",
+      "icon": "menu-icon icon-base ti tabler-mood-smile",
+      "slug": "admin.avatars",
+      "url": "/admin/avatars"
+    },
+    {
+      "name": "Subjects",
+      "icon": "menu-icon icon-base ti tabler-book",
+      "slug": "admin.subjects",
+      "url": "/admin/subjects"
+    },
+    {
+      "name": "Grades",
+      "icon": "menu-icon icon-base ti tabler-school",
+      "slug": "admin.grades",
+      "url": "/admin/grades"
+    },
+    {
+      "name": "Questions",
+      "icon": "menu-icon icon-base ti tabler-help-circle",
+      "slug": "admin.questions",
+      "url": "/admin/questions"
     }
   ]
 }

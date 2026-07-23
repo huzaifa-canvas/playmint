@@ -34,6 +34,25 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // OTP-based Forgot PIN (auth needed, user must be logged in)
     Route::post('/user/forgot-pin', [AuthController::class, 'forgotPin']);
     Route::post('/user/verify-reset-pin', [AuthController::class, 'verifyAndResetPin']);
-});
 
+    // ─── Quiz Engine (Read-Only) ────────────────────────────────────
+    Route::get('/subjects', [\App\Http\Controllers\Api\SubjectController::class, 'index']);
+    Route::get('/subjects/{id}', [\App\Http\Controllers\Api\SubjectController::class, 'show']);
+
+    Route::get('/grades', [\App\Http\Controllers\Api\GradeController::class, 'index']);
+    Route::get('/grades/{id}', [\App\Http\Controllers\Api\GradeController::class, 'show']);
+
+    Route::get('/questions', [\App\Http\Controllers\Api\QuestionController::class, 'index']);
+    Route::get('/questions/{id}', [\App\Http\Controllers\Api\QuestionController::class, 'show']);
+
+    // ─── Avatars (Read-only list for mobile) ───────────────────────
+    Route::get('/avatars', [\App\Http\Controllers\Api\AvatarController::class, 'index']);
+
+    // ─── Children (Parent manages their children) ──────────────────
+    Route::get('/children', [\App\Http\Controllers\Api\ChildController::class, 'index']);
+    Route::post('/children', [\App\Http\Controllers\Api\ChildController::class, 'store']);
+    Route::get('/children/{id}', [\App\Http\Controllers\Api\ChildController::class, 'show']);
+    Route::put('/children/{id}', [\App\Http\Controllers\Api\ChildController::class, 'update']);
+    Route::delete('/children/{id}', [\App\Http\Controllers\Api\ChildController::class, 'destroy']);
+});
     
