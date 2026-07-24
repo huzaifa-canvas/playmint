@@ -50,9 +50,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // ─── Children (Parent manages their children) ──────────────────
     Route::get('/children', [\App\Http\Controllers\Api\ChildController::class, 'index']);
-    Route::post('/children', [\App\Http\Controllers\Api\ChildController::class, 'store']);
-    Route::get('/children/{id}', [\App\Http\Controllers\Api\ChildController::class, 'show']);
-    Route::put('/children/{id}', [\App\Http\Controllers\Api\ChildController::class, 'update']);
-    Route::delete('/children/{id}', [\App\Http\Controllers\Api\ChildController::class, 'destroy']);
+    Route::post('/children/add', [\App\Http\Controllers\Api\ChildController::class, 'store']);
+    Route::get('/children/show/{id}', [\App\Http\Controllers\Api\ChildController::class, 'show']);
+    Route::post('/children/update/{id}', [\App\Http\Controllers\Api\ChildController::class, 'update']);
+    Route::post('/children/delete/{id}', [\App\Http\Controllers\Api\ChildController::class, 'destroy']);
 });
-    

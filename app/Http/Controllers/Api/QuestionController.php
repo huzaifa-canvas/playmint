@@ -29,7 +29,7 @@ class QuestionController extends Controller
             });
         }
 
-        $questions = $query->paginate(20);
+        $questions = $query->inRandomOrder()->paginate(20);
         return response()->json(['status' => true, 'data' => $questions]);
     }
 
