@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Subject;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SubjectController extends Controller
 {
@@ -29,8 +30,8 @@ class SubjectController extends Controller
         $data = $request->all();
 
         if ($request->hasFile('icon')) {
-            $path = $request->file('icon')->store('public/subjects');
-            $data['icon'] = str_replace('public/', 'storage/', $path);
+            $path = $request->file('icon')->store('subjects', 'public');
+            $data['icon'] = 'storage/' . $path;
         }
 
         Subject::create($data);
@@ -53,8 +54,15 @@ class SubjectController extends Controller
         $data = $request->all();
 
         if ($request->hasFile('icon')) {
-            $path = $request->file('icon')->store('public/subjects');
-            $data['icon'] = str_replace('public/', 'storage/', $path);
+            if ($subject->icon) {
+                $oldPath = str_replace(['public/', 'storage/'], '', $subject->icon);
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+
+            $path = $request->file('icon')->store('subjects', 'public');
+            $data['icon'] = 'storage/' . $path;
         }
 
         $subject->update($data);
@@ -64,6 +72,13 @@ class SubjectController extends Controller
 
     public function destroy(Subject $subject)
     {
+        if ($subject->icon) {
+            $iconPath = str_replace(['public/', 'storage/'], '', $subject->icon);
+            if (Storage::disk('public')->exists($iconPath)) {
+                Storage::disk('public')->delete($iconPath);
+            }
+        }
+
         $subject->delete();
         return redirect()->route('admin.subjects.index')->with('success', 'Subject deleted successfully.');
     }
