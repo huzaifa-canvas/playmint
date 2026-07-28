@@ -54,9 +54,16 @@ class QuestionController extends Controller
 
         $questions = $query->inRandomOrder()->paginate(20);
 
-        // Format: cast subject_id to int, include only the child's grade
+        // Format: cast subject_id to int, group options, include only the child's grade
         $questions->getCollection()->transform(function ($question) use ($child) {
             $question->subject_id = (int) $question->subject_id;
+            $question->options = [
+                'a' => $question->option_a,
+                'b' => $question->option_b,
+                'c' => $question->option_c,
+                'd' => $question->option_d,
+            ];
+            unset($question->option_a, $question->option_b, $question->option_c, $question->option_d);
             $question->grade = $child->grade;
             unset($question->grades);
             return $question;
