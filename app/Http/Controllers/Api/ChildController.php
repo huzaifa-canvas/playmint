@@ -140,7 +140,8 @@ class ChildController extends Controller
         return [
             'id'       => $child->id,
             'name'     => $child->name,
-            'age'      => $child->age,
+            'age'      => (int) $child->age,
+            'quiz_count' => (int) rand(1, 200),
             'avatar'   => $child->avatar ? [
                 'id'        => $child->avatar->id,
                 'image_url' => $child->avatar->image_url,
