@@ -15,7 +15,7 @@ class Avatar extends Model
 
     public function getImageUrlAttribute(): string
     {
-        return asset('storage/' . $this->image);
+        return 'storage/' . $this->image;
     }
 
     public function children()

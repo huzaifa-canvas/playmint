@@ -64,7 +64,7 @@ class QuestionController extends Controller
                 'd' => $question->option_d,
             ];
             unset($question->option_a, $question->option_b, $question->option_c, $question->option_d);
-            $question->image = $question->image ? asset($question->image) : null;
+            $question->image = $question->image ? $question->image : null;
             $question->grade = $child->grade;
             unset($question->grades);
             return $question;
