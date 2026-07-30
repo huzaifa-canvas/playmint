@@ -9,7 +9,10 @@ class Child extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'avatar_id', 'name', 'age', 'grade_id'];
+    protected $fillable = [
+        'user_id', 'avatar_id', 'name', 'age', 'grade_id',
+        'daily_reward_time_limit', 'questions_per_quiz', 'quizzes_per_day',
+    ];
 
     public function parent()
     {

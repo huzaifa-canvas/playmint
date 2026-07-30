@@ -35,6 +35,15 @@
         </select>
       </div>
       <div>
+        <label for="difficulty" class="form-label">Filter by Difficulty</label>
+        <select name="difficulty" id="difficulty" class="form-select">
+          <option value="">All Difficulties</option>
+          <option value="easy" {{ request('difficulty') == 'easy' ? 'selected' : '' }}>Easy</option>
+          <option value="medium" {{ request('difficulty') == 'medium' ? 'selected' : '' }}>Medium</option>
+          <option value="hard" {{ request('difficulty') == 'hard' ? 'selected' : '' }}>Hard</option>
+        </select>
+      </div>
+      <div>
         <button type="submit" class="btn btn-primary">Filter</button>
         <a href="{{ route('admin.questions.index') }}" class="btn btn-label-secondary">Reset</a>
       </div>
@@ -57,6 +66,7 @@
         <tr>
           <th>Subject</th>
           <th>Grade</th>
+          <th>Difficulty</th>
           <th>Question</th>
           <th>Actions</th>
         </tr>
@@ -69,6 +79,12 @@
             @foreach($question->grades as $grade)
               <span class="badge bg-label-success">{{ $grade->name }}</span>
             @endforeach
+          </td>
+          <td>
+            @php
+              $difficultyColors = ['easy' => 'success', 'medium' => 'warning', 'hard' => 'danger'];
+            @endphp
+            <span class="badge bg-label-{{ $difficultyColors[$question->difficulty] ?? 'secondary' }}">{{ ucfirst($question->difficulty ?? 'N/A') }}</span>
           </td>
           <td>{{ \Illuminate\Support\Str::limit($question->question_text, 50) }}</td>
           <td>
@@ -88,7 +104,7 @@
         </tr>
         @empty
         <tr>
-          <td colspan="4" class="text-center py-4 text-muted">No questions found.</td>
+          <td colspan="5" class="text-center py-4 text-muted">No questions found.</td>
         </tr>
         @endforelse
       </tbody>

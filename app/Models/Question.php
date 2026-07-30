@@ -18,6 +18,8 @@ class Question extends Model
         'option_c',
         'option_d',
         'correct_option',
+        'difficulty',
+        'image',
     ];
 
     public function subject()

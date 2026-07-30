@@ -7,6 +7,7 @@ use App\Models\Question;
 use App\Models\Subject;
 use App\Models\Grade;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class QuestionController extends Controller
@@ -24,6 +25,10 @@ class QuestionController extends Controller
             $query->whereHas('grades', function ($q) use ($gradeId) {
                 $q->where('grades.id', $gradeId);
             });
+        }
+
+        if ($request->has('difficulty') && $request->difficulty != '') {
+            $query->where('difficulty', $request->difficulty);
         }
 
         $questions = $query->paginate(10);
@@ -52,10 +57,17 @@ class QuestionController extends Controller
             'option_c' => 'required|string',
             'option_d' => 'required|string',
             'correct_option' => ['required', Rule::in(['a', 'b', 'c', 'd', 'A', 'B', 'C', 'D'])],
+            'difficulty' => ['required', Rule::in(['easy', 'medium', 'hard'])],
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $data = $request->all();
         $data['correct_option'] = strtolower($data['correct_option']);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('questions', 'public');
+            $data['image'] = 'storage/' . $path;
+        }
 
         $question = Question::create($data);
         $question->grades()->sync($request->grade_ids);
@@ -82,10 +94,35 @@ class QuestionController extends Controller
             'option_c' => 'required|string',
             'option_d' => 'required|string',
             'correct_option' => ['required', Rule::in(['a', 'b', 'c', 'd', 'A', 'B', 'C', 'D'])],
+            'difficulty' => ['required', Rule::in(['easy', 'medium', 'hard'])],
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $data = $request->all();
         $data['correct_option'] = strtolower($data['correct_option']);
+
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($question->image) {
+                $oldPath = str_replace('storage/', '', $question->image);
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+            $path = $request->file('image')->store('questions', 'public');
+            $data['image'] = 'storage/' . $path;
+        }
+
+        // If user explicitly removed the image
+        if ($request->has('remove_image') && $request->remove_image) {
+            if ($question->image) {
+                $oldPath = str_replace('storage/', '', $question->image);
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+            $data['image'] = null;
+        }
 
         $question->update($data);
         $question->grades()->sync($request->grade_ids);
@@ -95,6 +132,14 @@ class QuestionController extends Controller
 
     public function destroy(Question $question)
     {
+        // Delete image file if exists
+        if ($question->image) {
+            $imagePath = str_replace('storage/', '', $question->image);
+            if (Storage::disk('public')->exists($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
+            }
+        }
+
         $question->delete();
         return redirect()->route('admin.questions.index')->with('success', 'Question deleted successfully.');
     }

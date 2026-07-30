@@ -53,5 +53,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/children/add', [\App\Http\Controllers\Api\ChildController::class, 'store']);
     Route::get('/children/show/{id}', [\App\Http\Controllers\Api\ChildController::class, 'show']);
     Route::post('/children/update/{id}', [\App\Http\Controllers\Api\ChildController::class, 'update']);
+    Route::post('/children/settings/{id}', [\App\Http\Controllers\Api\ChildController::class, 'updateSettings']);
     Route::post('/children/delete/{id}', [\App\Http\Controllers\Api\ChildController::class, 'destroy']);
 });

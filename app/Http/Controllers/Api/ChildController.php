@@ -55,6 +55,9 @@ class ChildController extends Controller
             'grade_id'    => 'nullable|exists:grades,id',
             'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'exists:subjects,id',
+            'daily_reward_time_limit' => 'nullable|integer|min:1',
+            'questions_per_quiz'      => 'nullable|integer|min:1',
+            'quizzes_per_day'         => 'nullable|integer|min:1',
         ]);
 
         $child = Auth::user()->children()->create([
@@ -62,6 +65,9 @@ class ChildController extends Controller
             'age'       => $request->age,
             'avatar_id' => $request->avatar_id,
             'grade_id'  => $request->grade_id,
+            'daily_reward_time_limit' => $request->daily_reward_time_limit,
+            'questions_per_quiz'      => $request->questions_per_quiz,
+            'quizzes_per_day'         => $request->quizzes_per_day,
         ]);
 
         if ($request->filled('subject_ids')) {
@@ -95,9 +101,15 @@ class ChildController extends Controller
             'grade_id'    => 'nullable|exists:grades,id',
             'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'exists:subjects,id',
+            'daily_reward_time_limit' => 'nullable|integer|min:1',
+            'questions_per_quiz'      => 'nullable|integer|min:1',
+            'quizzes_per_day'         => 'nullable|integer|min:1',
         ]);
 
-        $child->update($request->only(['name', 'age', 'avatar_id', 'grade_id']));
+        $child->update($request->only([
+            'name', 'age', 'avatar_id', 'grade_id',
+            'daily_reward_time_limit', 'questions_per_quiz', 'quizzes_per_day',
+        ]));
 
         if ($request->has('subject_ids')) {
             $child->subjects()->sync($request->subject_ids ?? []);
@@ -133,6 +145,36 @@ class ChildController extends Controller
     }
 
     /**
+     * Update quiz settings for a child.
+     */
+    public function updateSettings(Request $request, $id)
+    {
+        $child = Auth::user()->children()->find($id);
+
+        if (!$child) {
+            return response()->json(['status' => false, 'message' => 'Child not found.'], 404);
+        }
+
+        $request->validate([
+            'daily_reward_time_limit' => 'nullable|integer|min:1',
+            'questions_per_quiz'      => 'nullable|integer|min:1',
+            'quizzes_per_day'         => 'nullable|integer|min:1',
+        ]);
+
+        $child->update($request->only([
+            'daily_reward_time_limit', 'questions_per_quiz', 'quizzes_per_day',
+        ]));
+
+        $child->load(['avatar', 'grade', 'subjects']);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Child quiz settings updated.',
+            'child'   => $this->formatChild($child),
+        ]);
+    }
+
+    /**
      * Format a child model for the API response.
      */
     private function formatChild(Child $child): array
@@ -142,6 +184,11 @@ class ChildController extends Controller
             'name'     => $child->name,
             'age'      => (int) $child->age,
             'quiz_count' => (int) rand(1, 200),
+            'settings' => [
+                'daily_reward_time_limit' => $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : null,
+                'questions_per_quiz'      => $child->questions_per_quiz ? (int) $child->questions_per_quiz : null,
+                'quizzes_per_day'         => $child->quizzes_per_day ? (int) $child->quizzes_per_day : null,
+            ],
             'avatar'   => $child->avatar ? [
                 'id'        => $child->avatar->id,
                 'image_url' => $child->avatar->image_url,

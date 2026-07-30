@@ -8,11 +8,11 @@
 
 <div class="card">
   <div class="card-body">
-    <form action="{{ route('admin.questions.store') }}" method="POST">
+    <form action="{{ route('admin.questions.store') }}" method="POST" enctype="multipart/form-data">
       @csrf
       
       <div class="row">
-        <div class="col-md-6 mb-4">
+        <div class="col-md-4 mb-4">
           <label class="form-label" for="subject_id">Subject <span class="text-danger">*</span></label>
           <select id="subject_id" name="subject_id" class="form-select @error('subject_id') is-invalid @enderror" required>
             <option value="">Select Subject</option>
@@ -25,7 +25,7 @@
           @enderror
         </div>
 
-        <div class="col-md-6 mb-4">
+        <div class="col-md-4 mb-4">
           <label class="form-label" for="grade_ids">Grades <span class="text-danger">*</span></label>
           <select id="grade_ids" name="grade_ids[]" class="form-select select2 @error('grade_ids') is-invalid @enderror" multiple required>
             @foreach($grades as $grade)
@@ -36,12 +36,33 @@
             <div class="invalid-feedback">{{ $message }}</div>
           @enderror
         </div>
+
+        <div class="col-md-4 mb-4">
+          <label class="form-label" for="difficulty">Difficulty <span class="text-danger">*</span></label>
+          <select id="difficulty" name="difficulty" class="form-select @error('difficulty') is-invalid @enderror" required>
+            <option value="">Select Difficulty</option>
+            <option value="easy" {{ old('difficulty') == 'easy' ? 'selected' : '' }}>Easy</option>
+            <option value="medium" {{ old('difficulty') == 'medium' ? 'selected' : '' }}>Medium</option>
+            <option value="hard" {{ old('difficulty') == 'hard' ? 'selected' : '' }}>Hard</option>
+          </select>
+          @error('difficulty')
+            <div class="invalid-feedback">{{ $message }}</div>
+          @enderror
+        </div>
       </div>
 
       <div class="mb-4">
         <label class="form-label" for="question_text">Question <span class="text-danger">*</span></label>
         <textarea class="form-control @error('question_text') is-invalid @enderror" id="question_text" name="question_text" rows="3" required>{{ old('question_text') }}</textarea>
         @error('question_text')
+          <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label" for="image">Question Image <span class="text-muted">(Optional)</span></label>
+        <input type="file" class="form-control @error('image') is-invalid @enderror" id="image" name="image" accept="image/*" />
+        @error('image')
           <div class="invalid-feedback">{{ $message }}</div>
         @enderror
       </div>

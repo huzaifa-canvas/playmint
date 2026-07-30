@@ -12,9 +12,18 @@ class SubjectController extends Controller
     /**
      * Display a listing of the subjects.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $subjects = Subject::all();
+        if ($request->has('child_id')) {
+            $child = \Illuminate\Support\Facades\Auth::user()->children()->find($request->child_id);
+            if (!$child) {
+                return response()->json(['status' => false, 'message' => 'Child not found or does not belong to you.'], 404);
+            }
+            $subjects = $child->subjects;
+        } else {
+            $subjects = Subject::all();
+        }
+
         return response()->json(['status' => true, 'data' => $subjects]);
     }
 
