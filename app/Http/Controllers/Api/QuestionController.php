@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Child;
 use App\Models\Question;
+use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -16,6 +17,7 @@ class QuestionController extends Controller
      * Display a listing of the questions.
      * Requires child_id to filter by child's enrolled grade.
      * Can also filter by subject_id.
+     * Excludes questions already attempted by the child today.
      */
     public function index(Request $request)
     {
@@ -41,21 +43,32 @@ class QuestionController extends Controller
             ], 422);
         }
 
+        // Get all question IDs the child already played today
+        $todayAttempts = QuizAttempt::where('child_id', $child->id)
+            ->where('played_date', now()->toDateString())->pluck('question_ids')->flatten()->unique()->toArray();
+
         // Filter questions by the child's enrolled grade
         $query = Question::with(['subject'])
             ->whereHas('grades', function ($q) use ($child) {
                 $q->where('grades.id', $child->grade_id);
             });
 
+        // Exclude already attempted questions today
+        if (!empty($todayAttempts)) {
+            $query->whereNotIn('id', $todayAttempts);
+        }
+
         // Optional subject filter
         if ($request->has('subject_id') && $request->subject_id != '') {
             $query->where('subject_id', $request->subject_id);
         }
 
-        $questions = $query->inRandomOrder()->paginate(20);
+        $limit = $child->questions_per_quiz ? (int) $child->questions_per_quiz : 5;
+
+        $questions = $query->inRandomOrder()->take($limit)->get();
 
         // Format: cast subject_id to int, group options, include only the child's grade
-        $questions->getCollection()->transform(function ($question) use ($child) {
+        $questions->transform(function ($question) use ($child) {
             $question->subject_id = (int) $question->subject_id;
             $question->options = [
                 'a' => $question->option_a,

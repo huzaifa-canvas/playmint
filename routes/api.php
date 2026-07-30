@@ -45,6 +45,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/questions', [\App\Http\Controllers\Api\QuestionController::class, 'index']);
     Route::get('/questions/{id}', [\App\Http\Controllers\Api\QuestionController::class, 'show']);
 
+    // ─── Quiz Attempts ──────────────────────────────────────────────
+    Route::post('/quiz/submit', [\App\Http\Controllers\Api\QuizAttemptController::class, 'store']);
+
     // ─── Avatars (Read-only list for mobile) ───────────────────────
     Route::get('/avatars', [\App\Http\Controllers\Api\AvatarController::class, 'index']);
 
