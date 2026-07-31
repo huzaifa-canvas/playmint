@@ -3,6 +3,12 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\SubjectController;
+use App\Http\Controllers\Api\GradeController;
+use App\Http\Controllers\Api\QuestionController;
+use App\Http\Controllers\Api\QuizAttemptController;
+use App\Http\Controllers\Api\AvatarController;
+use App\Http\Controllers\Api\ChildController;
 
 
 Route::fallback(function(){
@@ -36,26 +42,26 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/user/verify-reset-pin', [AuthController::class, 'verifyAndResetPin']);
 
     // ─── Quiz Engine (Read-Only) ────────────────────────────────────
-    Route::get('/subjects', [\App\Http\Controllers\Api\SubjectController::class, 'index']);
-    Route::get('/subjects/{id}', [\App\Http\Controllers\Api\SubjectController::class, 'show']);
+    Route::get('/subjects', [SubjectController::class, 'index']);
+    Route::get('/subjects/{id}', [SubjectController::class, 'show']);
 
-    Route::get('/grades', [\App\Http\Controllers\Api\GradeController::class, 'index']);
-    Route::get('/grades/{id}', [\App\Http\Controllers\Api\GradeController::class, 'show']);
+    Route::get('/grades', [GradeController::class, 'index']);
+    Route::get('/grades/{id}', [GradeController::class, 'show']);
 
-    Route::get('/questions', [\App\Http\Controllers\Api\QuestionController::class, 'index']);
-    Route::get('/questions/{id}', [\App\Http\Controllers\Api\QuestionController::class, 'show']);
+    Route::get('/questions', [QuestionController::class, 'index']);
+    Route::get('/questions/{id}', [QuestionController::class, 'show']);
 
     // ─── Quiz Attempts ──────────────────────────────────────────────
-    Route::post('/quiz/submit', [\App\Http\Controllers\Api\QuizAttemptController::class, 'store']);
+    Route::post('/quiz/submit', [QuizAttemptController::class, 'store']);
 
     // ─── Avatars (Read-only list for mobile) ───────────────────────
-    Route::get('/avatars', [\App\Http\Controllers\Api\AvatarController::class, 'index']);
+    Route::get('/avatars', [AvatarController::class, 'index']);
 
     // ─── Children (Parent manages their children) ──────────────────
-    Route::get('/children', [\App\Http\Controllers\Api\ChildController::class, 'index']);
-    Route::post('/children/add', [\App\Http\Controllers\Api\ChildController::class, 'store']);
-    Route::get('/children/show/{id}', [\App\Http\Controllers\Api\ChildController::class, 'show']);
-    Route::post('/children/update/{id}', [\App\Http\Controllers\Api\ChildController::class, 'update']);
-    Route::post('/children/settings/{id}', [\App\Http\Controllers\Api\ChildController::class, 'updateSettings']);
-    Route::post('/children/delete/{id}', [\App\Http\Controllers\Api\ChildController::class, 'destroy']);
+    Route::get('/children', [ChildController::class, 'index']);
+    Route::post('/children/add', [ChildController::class, 'store']);
+    Route::get('/children/show/{id}', [ChildController::class, 'show']);
+    Route::post('/children/update/{id}', [ChildController::class, 'update']);
+    Route::post('/children/settings/{id}', [ChildController::class, 'updateSettings']);
+    Route::post('/children/delete/{id}', [ChildController::class, 'destroy']);
 });
