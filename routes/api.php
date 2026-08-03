@@ -64,4 +64,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/children/update/{id}', [ChildController::class, 'update']);
     Route::post('/children/settings/{id}', [ChildController::class, 'updateSettings']);
     Route::post('/children/delete/{id}', [ChildController::class, 'destroy']);
+    
+    Route::get('/children/dashboard/{id?}', [ChildController::class, 'dashboard']);
+    Route::get('/leaderboard', [ChildController::class, 'leaderboard']);
 });

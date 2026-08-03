@@ -54,4 +54,12 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::get('questions/{question}/edit', [\App\Http\Controllers\Admin\QuestionController::class, 'edit'])->name('admin.questions.edit');
     Route::put('questions/{question}', [\App\Http\Controllers\Admin\QuestionController::class, 'update'])->name('admin.questions.update');
     Route::delete('questions/{question}', [\App\Http\Controllers\Admin\QuestionController::class, 'destroy'])->name('admin.questions.destroy');
+
+    // Milestones
+    Route::get('milestones', [\App\Http\Controllers\Admin\MilestoneController::class, 'index'])->name('admin.milestones.index');
+    Route::get('milestones/create', [\App\Http\Controllers\Admin\MilestoneController::class, 'create'])->name('admin.milestones.create');
+    Route::post('milestones', [\App\Http\Controllers\Admin\MilestoneController::class, 'store'])->name('admin.milestones.store');
+    Route::get('milestones/{milestone}/edit', [\App\Http\Controllers\Admin\MilestoneController::class, 'edit'])->name('admin.milestones.edit');
+    Route::put('milestones/{milestone}', [\App\Http\Controllers\Admin\MilestoneController::class, 'update'])->name('admin.milestones.update');
+    Route::delete('milestones/{milestone}', [\App\Http\Controllers\Admin\MilestoneController::class, 'destroy'])->name('admin.milestones.destroy');
 });

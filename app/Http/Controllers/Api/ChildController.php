@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Child;
+use App\Models\Milestone;
+use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ChildController extends Controller
 {
@@ -171,6 +174,230 @@ class ChildController extends Controller
             'status'  => true,
             'message' => 'Child quiz settings updated.',
             'child'   => $this->formatChild($child),
+        ]);
+    }
+
+    /**
+     * Get dashboard data for a child.
+     */
+    public function dashboard(Request $request, $id = null)
+    {
+        $childId = $id ?? $request->child_id;
+
+        $child = Auth::user()->children()->with(['avatar', 'grade', 'subjects'])->find($childId);
+
+        if (!$child) {
+            return response()->json(['status' => false, 'message' => 'Child not found.'], 404);
+        }
+
+        // 1. Total Quizzes & Points
+        $totalQuizzesPlayed = QuizAttempt::where('child_id', $child->id)->count();
+        $totalCorrectAnswers = QuizAttempt::where('child_id', $child->id)->sum('correct_count');
+        $points = $totalCorrectAnswers * 10;
+
+        // 2. Milestone Progress
+        $currentMilestone = Milestone::where('start_range', '<=', $totalQuizzesPlayed)
+            ->where('end_range', '>=', $totalQuizzesPlayed)
+            ->first();
+
+        if (!$currentMilestone) {
+            $currentMilestone = Milestone::where('end_range', '<', $totalQuizzesPlayed)->orderBy('end_range', 'desc')->first();
+        }
+
+        $nextMilestone = Milestone::where('start_range', '>', $totalQuizzesPlayed)
+            ->orderBy('start_range', 'asc')
+            ->first();
+
+        if (!$nextMilestone) {
+            $nextMilestone = Milestone::orderBy('end_range', 'desc')->first();
+        }
+
+        $targetQuizzes = $nextMilestone ? $nextMilestone->end_range : ($currentMilestone ? $currentMilestone->end_range : 100);
+        $milestoneTitle = $nextMilestone ? $nextMilestone->name : ($currentMilestone ? $currentMilestone->name : 'Grandmaster');
+
+        $milestoneData = [
+            'current_badge' => $currentMilestone ? [
+                'id'          => $currentMilestone->id,
+                'name'        => $currentMilestone->name,
+                'image'       => $currentMilestone->image ? asset($currentMilestone->image) : null,
+                'start_range' => $currentMilestone->start_range,
+                'end_range'   => $currentMilestone->end_range,
+            ] : null,
+            'next_badge' => $nextMilestone ? [
+                'id'             => $nextMilestone->id,
+                'name'           => $nextMilestone->name,
+                'target_quizzes' => $nextMilestone->end_range,
+            ] : null,
+            'completed_quizzes' => $totalQuizzesPlayed,
+            'target_quizzes'    => $targetQuizzes,
+            'progress_text'     => "{$totalQuizzesPlayed} / {$targetQuizzes} Quizzes To {$milestoneTitle}",
+        ];
+
+        // 3. Reward Time (Static as requested)
+        $rewardTimeLimit = $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : 45;
+        $rewardTimeData = [
+            'earned_minutes' => 25, // Static as requested
+            'total_minutes'  => $rewardTimeLimit,
+            'display_text'   => "25 / {$rewardTimeLimit} Min",
+        ];
+
+        // 4. Daily / Weekly Streak (Monday to Sunday of current week)
+        $startOfWeek = now()->startOfWeek(); // Monday
+        $todayStr = now()->toDateString();
+
+        $weekDays = [];
+        $dayInitials = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+        $streakActiveDays = 0;
+
+        for ($i = 0; $i < 7; $i++) {
+            $date = $startOfWeek->copy()->addDays($i);
+            $dateStr = $date->toDateString();
+
+            $playedOnDay = QuizAttempt::where('child_id', $child->id)
+                ->where('played_date', $dateStr)
+                ->exists();
+
+            if ($playedOnDay) {
+                $streakActiveDays++;
+            }
+
+            $weekDays[] = [
+                'day'       => $dayInitials[$i],
+                'day_name'  => $date->format('D'),
+                'date'      => $dateStr,
+                'is_played' => $playedOnDay,
+                'is_today'  => ($dateStr === $todayStr),
+            ];
+        }
+
+        // 5. Today's Quizzes
+        $todayAttempts = QuizAttempt::where('child_id', $child->id)
+            ->where('played_date', $todayStr)
+            ->with('subject')
+            ->latest()
+            ->get();
+
+        $quizzesPerDay = $child->quizzes_per_day ? (int) $child->quizzes_per_day : 5;
+        $playedTodayCount = $todayAttempts->count();
+        $quizzesLeft = max(0, $quizzesPerDay - $playedTodayCount);
+
+        $todayPlayedList = $todayAttempts->map(function ($attempt) use ($child) {
+            return [
+                'id'              => $attempt->id,
+                'subject_id'      => $attempt->subject_id,
+                'subject_name'    => $attempt->subject ? $attempt->subject->name : null,
+                'subject_icon'    => ($attempt->subject && $attempt->subject->icon) ? asset('storage/' . str_replace(['public/', 'storage/'], '', $attempt->subject->icon)) : null,
+                'grade_name'      => $child->grade ? $child->grade->name : null,
+                'total_questions' => $attempt->total_questions,
+                'correct_count'   => $attempt->correct_count,
+                'incorrect_count' => $attempt->incorrect_count,
+                'duration'        => $attempt->duration,
+                'duration_min'    => (int) ceil($attempt->duration / 60),
+                'played_at'       => $attempt->created_at->format('H:i A'),
+            ];
+        });
+
+        return response()->json([
+            'status' => true,
+            'data'   => [
+                'child' => [
+                    'id'     => $child->id,
+                    'name'   => $child->name,
+                    'avatar' => $child->avatar ? [
+                        'id'        => $child->avatar->id,
+                        'image_url' => $child->avatar->image_url,
+                    ] : null,
+                    'grade'  => $child->grade ? [
+                        'id'   => $child->grade->id,
+                        'name' => $child->grade->name,
+                    ] : null,
+                    'points' => $points,
+                ],
+                'milestone_badge' => $milestoneData,
+                'reward_time'     => $rewardTimeData,
+                'daily_streak'    => [
+                    'total_days_active' => $streakActiveDays,
+                    'streak_text'       => "{$streakActiveDays} Days!",
+                    'days'              => $weekDays,
+                ],
+                'todays_quizzes'  => [
+                    'quizzes_per_day_limit' => $quizzesPerDay,
+                    'played_count'          => $playedTodayCount,
+                    'quizzes_left'          => $quizzesLeft,
+                    'quizzes_left_text'     => "{$quizzesLeft} left",
+                    'played_quizzes'        => $todayPlayedList,
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Get Leaderboard for children (Weekly / Monthly / All-time).
+     */
+    public function leaderboard(Request $request)
+    {
+        $request->validate([
+            'type'     => 'nullable|in:weekly,monthly,all_time',
+            'child_id' => 'nullable|exists:children,id',
+        ]);
+
+        $type = $request->input('type', 'weekly');
+        $currentChildId = $request->input('child_id');
+
+        // Date filter
+        $query = QuizAttempt::query();
+
+        if ($type === 'weekly') {
+            $query->where('played_date', '>=', now()->startOfWeek()->toDateString());
+        } elseif ($type === 'monthly') {
+            $query->where('played_date', '>=', now()->startOfMonth()->toDateString());
+        }
+
+        // Sum correct_count grouped by child_id
+        $scores = $query->select('child_id', DB::raw('SUM(correct_count) as total_points'))
+            ->groupBy('child_id')
+            ->pluck('total_points', 'child_id');
+
+        // Fetch all children with avatars
+        $children = Child::with('avatar')->get();
+
+        $rankings = $children->map(function ($child) use ($scores, $currentChildId) {
+            $points = (int) ($scores[$child->id] ?? 0);
+            return [
+                'id'               => $child->id,
+                'name'             => $child->name,
+                'display_name'     => ((int)$child->id === (int)$currentChildId) ? $child->name . ' (You!)' : $child->name,
+                'is_current_child' => ((int)$child->id === (int)$currentChildId),
+                'points'           => $points,
+                'avatar'           => $child->avatar ? [
+                    'id'        => $child->avatar->id,
+                    'image_url' => $child->avatar->image_url,
+                ] : null,
+            ];
+        })
+        ->sortByDesc('points')
+        ->values();
+
+        // Assign ranks (1-indexed)
+        $rankings->transform(function ($item, $index) {
+            $item['rank'] = $index + 1;
+            return $item;
+        });
+
+        // Top 3 Podium
+        $top3 = [
+            'first'  => $rankings->firstWhere('rank', 1) ?? null,
+            'second' => $rankings->firstWhere('rank', 2) ?? null,
+            'third'  => $rankings->firstWhere('rank', 3) ?? null,
+        ];
+
+        return response()->json([
+            'status' => true,
+            'filter' => $type,
+            'data'   => [
+                'top_3'    => $top3,
+                'rankings' => $rankings,
+            ],
         ]);
     }
 
