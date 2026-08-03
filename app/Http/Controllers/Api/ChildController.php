@@ -402,6 +402,123 @@ class ChildController extends Controller
     }
 
     /**
+     * Get Control Centre data for a child (Performance, Progress, Screen Time).
+     */
+    public function controlCentre(Request $request, $id = null)
+    {
+        if ($id) {
+            $child = Auth::user()->children()->with(['avatar', 'grade'])->find($id);
+        } else {
+            $child = Auth::user()->children()->with(['avatar', 'grade'])->first();
+        }
+
+        if (!$child) {
+            return response()->json(['status' => false, 'message' => 'No child profile found. Please add a child first.'], 404);
+        }
+
+        // --- Siblings List with Levels ---
+        $siblings = Auth::user()->children()->with('avatar')->get()->map(function ($sib) use ($child) {
+            $sibQuizzes = QuizAttempt::where('child_id', $sib->id)->count();
+            $level = max(1, (int) floor($sibQuizzes / 10)); // simple level logic
+            return [
+                'id'        => $sib->id,
+                'name'      => $sib->name,
+                'avatar'    => $sib->avatar ? [
+                    'id'        => $sib->avatar->id,
+                    'image_url' => $sib->avatar->image_url,
+                ] : null,
+                'level'     => $level,
+                'is_active' => $sib->id === $child->id,
+            ];
+        });
+
+        // --- Performance Tab ---
+        // This Week
+        $startOfWeek = now()->startOfWeek()->toDateString();
+        $weeklyAttempts = QuizAttempt::where('child_id', $child->id)
+            ->where('played_date', '>=', $startOfWeek)
+            ->get();
+
+        $weeklyQuizzesCount = $weeklyAttempts->count();
+        $weeklyTotalQuestions = $weeklyAttempts->sum('total_questions');
+        $weeklyCorrectAnswers = $weeklyAttempts->sum('correct_count');
+        $weeklyAccuracy = $weeklyTotalQuestions > 0 ? round(($weeklyCorrectAnswers / $weeklyTotalQuestions) * 100) : 0;
+        $weeklyDurationSecs = $weeklyAttempts->sum('duration');
+        $weeklyStudyTimeHours = round($weeklyDurationSecs / 3600, 1);
+
+        // All Time
+        $allAttempts = QuizAttempt::where('child_id', $child->id)->get();
+        $allTotalQuestions = $allAttempts->sum('total_questions');
+        $allCorrectAnswers = $allAttempts->sum('correct_count');
+        $allAccuracy = $allTotalQuestions > 0 ? round(($allCorrectAnswers / $allTotalQuestions) * 100) : 0;
+        
+        $gradeName = $child->grade ? $child->grade->name : 'their grade';
+        $performanceRemark = "{$child->name} Is Performing Above Average For {$gradeName}!";
+
+        // Subject Breakdown (All Time)
+        $subjectBreakdown = QuizAttempt::where('child_id', $child->id)
+            ->with('subject')
+            ->select('subject_id', DB::raw('SUM(correct_count) as sum_correct'), DB::raw('SUM(total_questions) as sum_total'))
+            ->groupBy('subject_id')
+            ->get()
+            ->map(function ($item) {
+                $acc = $item->sum_total > 0 ? round(($item->sum_correct / $item->sum_total) * 100) : 0;
+                return [
+                    'name'                => $item->subject ? $item->subject->name : 'Unknown',
+                    'accuracy_percentage' => $acc,
+                ];
+            });
+
+        // --- Progress Tab ---
+        $totalQuizzesAllTime = $allAttempts->count();
+        $consistencyText = "Great Consistency This Week!";
+        
+        $dailyBreakdown = [];
+        for ($i = 0; $i < 7; $i++) {
+            $dateObj = now()->startOfWeek()->addDays($i);
+            $dateStr = $dateObj->toDateString();
+            $count = QuizAttempt::where('child_id', $child->id)->where('played_date', $dateStr)->count();
+            
+            $dailyBreakdown[] = [
+                'day'     => $dateObj->format('D'), // Mon, Tue...
+                'quizzes' => $count,
+            ];
+        }
+
+        // --- Screen Time Tab ---
+        $earnedMinutes = $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : 45;
+        $usedMinutes = 30; // Static for now as requested in previous similar logic
+
+        return response()->json([
+            'status' => true,
+            'data'   => [
+                'siblings'    => $siblings,
+                'performance' => [
+                    'this_week' => [
+                        'quizzes_count'       => $weeklyQuizzesCount,
+                        'accuracy_percentage' => $weeklyAccuracy,
+                        'study_time_hours'    => $weeklyStudyTimeHours,
+                    ],
+                    'all_time' => [
+                        'accuracy_percentage' => $allAccuracy,
+                        'remark'              => $performanceRemark,
+                        'subjects'            => $subjectBreakdown,
+                    ]
+                ],
+                'progress' => [
+                    'quizzes_completed' => $totalQuizzesAllTime,
+                    'consistency_text'  => $consistencyText,
+                    'daily_breakdown'   => $dailyBreakdown,
+                ],
+                'screen_time' => [
+                    'earned_minutes' => $earnedMinutes,
+                    'used_minutes'   => $usedMinutes,
+                ],
+            ]
+        ]);
+    }
+
+    /**
      * Format a child model for the API response.
      */
     private function formatChild(Child $child): array
