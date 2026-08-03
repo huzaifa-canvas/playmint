@@ -527,7 +527,7 @@ class ChildController extends Controller
             'id'       => $child->id,
             'name'     => $child->name,
             'age'      => (int) $child->age,
-            'quiz_count' => (int) rand(1, 200),
+            'quiz_count' => QuizAttempt::where('child_id', $child->id)->count(),
             'settings' => [
                 'daily_reward_time_limit' => $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : null,
                 'questions_per_quiz'      => $child->questions_per_quiz ? (int) $child->questions_per_quiz : null,
