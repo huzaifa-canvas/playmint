@@ -358,19 +358,19 @@ class ChildController extends Controller
             ->groupBy('child_id')
             ->pluck('total_points', 'child_id');
 
-        // Fetch all children with avatars
-        $children = Child::with('avatar')->get();
+        // Fetch all children belonging to the current parent with avatars
+        $children = Auth::user()->children()->with('avatar')->get();
 
         $rankings = $children->map(function ($child) use ($scores, $currentChildId) {
             $points = (int) ($scores[$child->id] ?? 0);
             return [
-                'id'               => $child->id,
+                'id'               => (int)$child->id,
                 'name'             => $child->name,
                 'display_name'     => ((int)$child->id === (int)$currentChildId) ? $child->name . ' (You!)' : $child->name,
                 'is_current_child' => ((int)$child->id === (int)$currentChildId),
-                'points'           => $points,
+                'points'           => $points * 10,
                 'avatar'           => $child->avatar ? [
-                    'id'        => $child->avatar->id,
+                    'id'        => (int)$child->avatar->id,
                     'image_url' => $child->avatar->image_url,
                 ] : null,
             ];
