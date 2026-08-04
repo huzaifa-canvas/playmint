@@ -196,7 +196,7 @@ class ChildController extends Controller
         $points = $totalCorrectAnswers * 10;
 
         // 2. Milestone Progress
-        $currentMilestone = Milestone::where('start_range', '<=', $totalQuizzesPlayed)
+        $currentMilestone = Milestone::where('start_range', '<=', max(1, $totalQuizzesPlayed))
             ->where('end_range', '>=', $totalQuizzesPlayed)
             ->first();
 
@@ -204,7 +204,7 @@ class ChildController extends Controller
             $currentMilestone = Milestone::where('end_range', '<', $totalQuizzesPlayed)->orderBy('end_range', 'desc')->first();
         }
 
-        $nextMilestone = Milestone::where('start_range', '>', $totalQuizzesPlayed)
+        $nextMilestone = Milestone::where('start_range', '>', $currentMilestone ? $currentMilestone->end_range : $totalQuizzesPlayed)
             ->orderBy('start_range', 'asc')
             ->first();
 
@@ -220,13 +220,13 @@ class ChildController extends Controller
                 'id'          => $currentMilestone->id,
                 'name'        => $currentMilestone->name,
                 'image'       => $currentMilestone->image ? asset($currentMilestone->image) : null,
-                'start_range' => $currentMilestone->start_range,
-                'end_range'   => $currentMilestone->end_range,
+                'start_range' => (int) $currentMilestone->start_range,
+                'end_range'   => (int) $currentMilestone->end_range,
             ] : null,
             'next_badge' => $nextMilestone ? [
                 'id'             => $nextMilestone->id,
                 'name'           => $nextMilestone->name,
-                'target_quizzes' => $nextMilestone->end_range,
+                'target_quizzes' => (int) $nextMilestone->end_range,
             ] : null,
             'completed_quizzes' => $totalQuizzesPlayed,
             'target_quizzes'    => $targetQuizzes,
@@ -283,15 +283,15 @@ class ChildController extends Controller
 
         $todayPlayedList = $todayAttempts->map(function ($attempt) use ($child) {
             return [
-                'id'              => $attempt->id,
-                'subject_id'      => $attempt->subject_id,
+                'id'              => (int) $attempt->id,
+                'subject_id'      => (int) $attempt->subject_id,
                 'subject_name'    => $attempt->subject ? $attempt->subject->name : null,
                 'subject_icon'    => ($attempt->subject && $attempt->subject->icon) ? asset('storage/' . str_replace(['public/', 'storage/'], '', $attempt->subject->icon)) : null,
                 'grade_name'      => $child->grade ? $child->grade->name : null,
-                'total_questions' => $attempt->total_questions,
-                'correct_count'   => $attempt->correct_count,
-                'incorrect_count' => $attempt->incorrect_count,
-                'duration'        => $attempt->duration,
+                'total_questions' => (int) $attempt->total_questions,
+                'correct_count'   => (int) $attempt->correct_count,
+                'incorrect_count' => (int) $attempt->incorrect_count,
+                'duration'        => (int) $attempt->duration,
                 'duration_min'    => (int) ceil($attempt->duration / 60),
                 'played_at'       => $attempt->created_at->format('H:i A'),
             ];
@@ -301,10 +301,10 @@ class ChildController extends Controller
             'status' => true,
             'data'   => [
                 'child' => [
-                    'id'     => $child->id,
+                    'id'     => (int) $child->id,
                     'name'   => $child->name,
                     'avatar' => $child->avatar ? [
-                        'id'        => $child->avatar->id,
+                        'id'        => (int) $child->avatar->id,
                         'image_url' => $child->avatar->image_url,
                     ] : null,
                     'grade'  => $child->grade ? [
@@ -321,9 +321,9 @@ class ChildController extends Controller
                     'days'              => $weekDays,
                 ],
                 'todays_quizzes'  => [
-                    'quizzes_per_day_limit' => $quizzesPerDay,
-                    'played_count'          => $playedTodayCount,
-                    'quizzes_left'          => $quizzesLeft,
+                    'quizzes_per_day_limit' => (int) $quizzesPerDay,
+                    'played_count'          => (int) $playedTodayCount,
+                    'quizzes_left'          => (int) $quizzesLeft,
                     'quizzes_left_text'     => "{$quizzesLeft} left",
                     'played_quizzes'        => $todayPlayedList,
                 ],
