@@ -228,8 +228,8 @@ class ChildController extends Controller
                 'name'           => $nextMilestone->name,
                 'target_quizzes' => (int) $nextMilestone->end_range,
             ] : null,
-            'completed_quizzes' => $totalQuizzesPlayed,
-            'target_quizzes'    => $targetQuizzes,
+            'completed_quizzes' => (int) $totalQuizzesPlayed,
+            'target_quizzes'    => (int) $targetQuizzes,
             'progress_text'     => "{$totalQuizzesPlayed} / {$targetQuizzes} Quizzes To {$milestoneTitle}",
         ];
 
