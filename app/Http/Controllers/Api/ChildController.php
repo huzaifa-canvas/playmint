@@ -162,11 +162,22 @@ class ChildController extends Controller
             'daily_reward_time_limit' => 'nullable|integer|min:1',
             'questions_per_quiz'      => 'nullable|integer|min:1',
             'quizzes_per_day'         => 'nullable|integer|min:1',
+            'duration_per_quiz'       => 'nullable|integer|min:1',
+            'daily_quiz_reminders'    => 'nullable|boolean',
+            'weekly_progress_report'  => 'nullable|boolean',
+            'reward_time_alerts'      => 'nullable|boolean',
+            'subject_ids'             => 'nullable|array',
+            'subject_ids.*'           => 'exists:subjects,id',
         ]);
 
         $child->update($request->only([
             'daily_reward_time_limit', 'questions_per_quiz', 'quizzes_per_day',
+            'duration_per_quiz', 'daily_quiz_reminders', 'weekly_progress_report', 'reward_time_alerts',
         ]));
+
+        if ($request->has('subject_ids')) {
+            $child->subjects()->sync($request->subject_ids ?? []);
+        }
 
         $child->load(['avatar', 'grade', 'subjects']);
 
@@ -532,6 +543,10 @@ class ChildController extends Controller
                 'daily_reward_time_limit' => $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : null,
                 'questions_per_quiz'      => $child->questions_per_quiz ? (int) $child->questions_per_quiz : null,
                 'quizzes_per_day'         => $child->quizzes_per_day ? (int) $child->quizzes_per_day : null,
+                'duration_per_quiz'       => $child->duration_per_quiz ? (int) $child->duration_per_quiz : null,
+                'daily_quiz_reminders'    => (bool) $child->daily_quiz_reminders,
+                'weekly_progress_report'  => (bool) $child->weekly_progress_report,
+                'reward_time_alerts'      => (bool) $child->reward_time_alerts,
             ],
             'avatar'   => $child->avatar ? [
                 'id'        => $child->avatar->id,

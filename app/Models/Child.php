@@ -12,6 +12,13 @@ class Child extends Model
     protected $fillable = [
         'user_id', 'avatar_id', 'name', 'age', 'grade_id',
         'daily_reward_time_limit', 'questions_per_quiz', 'quizzes_per_day',
+        'duration_per_quiz', 'daily_quiz_reminders', 'weekly_progress_report', 'reward_time_alerts',
+    ];
+
+    protected $casts = [
+        'daily_quiz_reminders'    => 'boolean',
+        'weekly_progress_report'  => 'boolean',
+        'reward_time_alerts'      => 'boolean',
     ];
 
     public function parent()

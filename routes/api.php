@@ -62,9 +62,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/children/add', [ChildController::class, 'store']);
     Route::get('/children/show/{id}', [ChildController::class, 'show']);
     Route::post('/children/update/{id}', [ChildController::class, 'update']);
-    Route::post('/children/settings/{id}', [ChildController::class, 'updateSettings']);
     Route::post('/children/delete/{id}', [ChildController::class, 'destroy']);
     
+    Route::post('/children/settings/{id}', [ChildController::class, 'updateSettings']);
     Route::get('/children/dashboard/{id?}', [ChildController::class, 'dashboard']);
     Route::get('/children/control-centre/{id?}', [ChildController::class, 'controlCentre']);
     Route::get('/leaderboard', [ChildController::class, 'leaderboard']);
