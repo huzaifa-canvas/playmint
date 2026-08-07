@@ -42,7 +42,7 @@
       @forelse($avatars as $avatar)
         <div class="col-6 col-sm-4 col-md-3 col-lg-1 avatar-item" id="avatar-{{ $avatar->id }}">
           <div class="avatar-card position-relative">
-            <img src="{{ $avatar->image_url }}" alt="Avatar" class="img-fluid rounded-3 w-100" style="height:120px;object-fit:contain;">
+            <img src="{{ asset($avatar->image_url) }}" alt="Avatar" class="img-fluid rounded-3 w-100" style="height:120px;object-fit:contain;">
             <button type="button"
               class="btn btn-danger btn-icon btn-xs avatar-delete-btn position-absolute top-0 end-0 m-1 rounded-circle"
               data-id="{{ $avatar->id }}"
