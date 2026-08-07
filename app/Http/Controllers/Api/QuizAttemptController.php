@@ -54,19 +54,28 @@ class QuizAttemptController extends Controller
             'played_date'     => now()->toDateString(),
         ]);
 
+        $quizzesPerDay = $child->quizzes_per_day ? (int) $child->quizzes_per_day : 0;
+        $playedTodayCount = QuizAttempt::where('child_id', $child->id)
+            ->where('played_date', now()->toDateString())
+            ->count();
+        $quizzesLeft = max(0, $quizzesPerDay - $playedTodayCount);
+
         return response()->json([
             'status'  => true,
             'message' => 'Quiz result saved successfully.',
             'data'    => [
-                'attempt_id'      => $attempt->id,
-                'total_questions'  => $attempt->total_questions,
-                'correct_count'   => $attempt->correct_count,
-                'incorrect_count' => $attempt->incorrect_count,
-                'accuracy'        => $attempt->total_questions > 0
+                'attempt_id'            => $attempt->id,
+                'total_questions'       => $attempt->total_questions,
+                'correct_count'         => $attempt->correct_count,
+                'incorrect_count'       => $attempt->incorrect_count,
+                'accuracy'              => $attempt->total_questions > 0
                     ? round(($attempt->correct_count / $attempt->total_questions) * 100, 1)
                     : 0,
-                'duration'        => $attempt->duration,
-                'played_date'     => $attempt->played_date->toDateString(),
+                'duration'              => $attempt->duration,
+                'played_date'           => $attempt->played_date->toDateString(),
+                'quizzes_per_day_limit' => $quizzesPerDay,
+                'quizzes_played_today'  => $playedTodayCount,
+                'quizzes_left_today'    => $quizzesLeft,
             ],
         ], 201);
     }
