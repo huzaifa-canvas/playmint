@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Milestone;
 use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -60,6 +61,40 @@ class QuizAttemptController extends Controller
             ->count();
         $quizzesLeft = max(0, $quizzesPerDay - $playedTodayCount);
 
+        // Check if total quizzes completed hits a milestone end_range
+        $totalQuizzesPlayed = QuizAttempt::where('child_id', $child->id)->count();
+        $unlockedMilestone = Milestone::where('end_range', $totalQuizzesPlayed)->first();
+
+        $isMilestoneUnlocked = false;
+        $milestoneData = null;
+
+        if ($unlockedMilestone) {
+            $isMilestoneUnlocked = true;
+
+            $nextMilestone = Milestone::where('start_range', '>', $unlockedMilestone->end_range)
+                ->orderBy('start_range', 'asc')
+                ->first();
+
+            $milestoneData = [
+                'title'    => 'Milestone Badge!',
+                'subtitle' => "You've Completed {$unlockedMilestone->end_range} Quizzes - Badge Unlocked!",
+                'badge'    => [
+                    'id'               => (int) $unlockedMilestone->id,
+                    'name'             => $unlockedMilestone->name,
+                    'image'            => $unlockedMilestone->image ? asset($unlockedMilestone->image) : null,
+                    'description'      => "Awarded For Reaching Your {$unlockedMilestone->end_range} Quiz Milestone",
+                    'quizzes_required' => (int) $unlockedMilestone->end_range,
+                ],
+                'next_milestone' => $nextMilestone ? [
+                    'id'               => (int) $nextMilestone->id,
+                    'name'             => $nextMilestone->name,
+                    'image'            => $nextMilestone->image ? asset($nextMilestone->image) : null,
+                    'quizzes_required' => (int) $nextMilestone->end_range,
+                    'progress_text'    => "0 / {$nextMilestone->end_range} Quizzes - 🏆 {$nextMilestone->name} Badge Awaits!",
+                ] : null,
+            ];
+        }
+
         return response()->json([
             'status'  => true,
             'message' => 'Quiz result saved successfully.',
@@ -76,6 +111,8 @@ class QuizAttemptController extends Controller
                 'quizzes_per_day_limit' => $quizzesPerDay,
                 'quizzes_played_today'  => $playedTodayCount,
                 'quizzes_left_today'    => $quizzesLeft,
+                'is_milestone_unlocked' => $isMilestoneUnlocked,
+                'milestone_data'        => $milestoneData,
             ],
         ], 201);
     }
