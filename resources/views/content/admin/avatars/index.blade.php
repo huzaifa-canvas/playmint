@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
             col.id = 'avatar-' + av.id;
             col.innerHTML = `
               <div class="avatar-card position-relative">
-                <img src="${av.image_url}" alt="Avatar" class="img-fluid rounded-3 w-100" style="height:120px;object-fit:contain;">
+                <img src="/${av.image_url}" alt="Avatar" class="img-fluid rounded-3 w-100" style="height:120px;object-fit:contain;">
                 <button type="button"
                   class="btn btn-danger btn-icon btn-xs avatar-delete-btn position-absolute top-0 end-0 m-1 rounded-circle"
                   data-id="${av.id}"
