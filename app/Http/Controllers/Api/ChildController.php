@@ -254,6 +254,10 @@ class ChildController extends Controller
             ->latest()
             ->get();
 
+        $quizzesPerDay = $child->quizzes_per_day ? (int) $child->quizzes_per_day : 5;
+        $playedTodayCount = $todayAttempts->count();
+        $quizzesLeft = max(0, $quizzesPerDay - $playedTodayCount);
+
         // 3. Reward Time (Dynamic Calculation)
         $dailyRewardTimeLimit = $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : 45;
         $timeRewardPerQuestion = $child->time_reward_per_question ? (int) $child->time_reward_per_question : 1;
