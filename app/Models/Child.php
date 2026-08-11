@@ -13,6 +13,7 @@ class Child extends Model
         'user_id', 'avatar_id', 'name', 'age', 'grade_id',
         'daily_reward_time_limit', 'questions_per_quiz', 'quizzes_per_day',
         'duration_per_quiz', 'daily_quiz_reminders', 'weekly_progress_report', 'reward_time_alerts',
+        'time_reward_per_question',
     ];
 
     protected $casts = [

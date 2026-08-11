@@ -95,6 +95,22 @@ class QuizAttemptController extends Controller
             ];
         }
 
+        // Reward Time Calculations
+        $dailyRewardTimeLimit = $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : 45;
+        $timeRewardPerQuestion = $child->time_reward_per_question ? (int) $child->time_reward_per_question : 1;
+
+        $todayCorrectCount = (int) QuizAttempt::where('child_id', $child->id)
+            ->where('played_date', now()->toDateString())
+            ->sum('correct_count');
+
+        $totalEarnedToday = min($dailyRewardTimeLimit, $todayCorrectCount * $timeRewardPerQuestion);
+        $totalRewardLimit = $dailyRewardTimeLimit;
+        $moreMinutesNeeded = max(0, $totalRewardLimit - $totalEarnedToday);
+
+        $rewardTimeText = $moreMinutesNeeded > 0
+            ? "{$totalEarnedToday} / {$totalRewardLimit} Min Reward Time. Only {$moreMinutesNeeded} MORE MINUTES!"
+            : "{$totalEarnedToday} / {$totalRewardLimit} Min Reward Time. Daily Limit Reached!";
+
         return response()->json([
             'status'  => true,
             'message' => 'Quiz result saved successfully.',
@@ -111,6 +127,10 @@ class QuizAttemptController extends Controller
                 'quizzes_per_day_limit' => $quizzesPerDay,
                 'quizzes_played_today'  => $playedTodayCount,
                 'quizzes_left_today'    => $quizzesLeft,
+                'earned_minutes'        => $totalEarnedToday,
+                'total_minutes'         => $totalRewardLimit,
+                'more_minutes_needed'   => $moreMinutesNeeded,
+                'reward_time_text'      => $rewardTimeText,
                 'is_milestone_unlocked' => $isMilestoneUnlocked,
                 'milestone_data'        => $milestoneData,
             ],

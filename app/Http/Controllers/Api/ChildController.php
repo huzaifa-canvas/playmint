@@ -163,6 +163,7 @@ class ChildController extends Controller
             'questions_per_quiz'      => 'nullable|integer|min:1',
             'quizzes_per_day'         => 'nullable|integer|min:1',
             'duration_per_quiz'       => 'nullable|integer|min:1',
+            'time_reward_per_question' => 'nullable|integer|min:1',
             'daily_quiz_reminders'    => 'nullable|boolean',
             'weekly_progress_report'  => 'nullable|boolean',
             'reward_time_alerts'      => 'nullable|boolean',
@@ -173,6 +174,7 @@ class ChildController extends Controller
         $child->update($request->only([
             'daily_reward_time_limit', 'questions_per_quiz', 'quizzes_per_day',
             'duration_per_quiz', 'daily_quiz_reminders', 'weekly_progress_report', 'reward_time_alerts',
+            'time_reward_per_question',
         ]));
 
         if ($request->has('subject_ids')) {
@@ -244,17 +246,31 @@ class ChildController extends Controller
             'progress_text'     => "{$totalQuizzesPlayed} / {$targetQuizzes} Quizzes To {$milestoneTitle}",
         ];
 
-        // 3. Reward Time (Static as requested)
-        $rewardTimeLimit = $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : 45;
+        $todayStr = now()->toDateString();
+
+        $todayAttempts = QuizAttempt::where('child_id', $child->id)
+            ->where('played_date', $todayStr)
+            ->with('subject')
+            ->latest()
+            ->get();
+
+        // 3. Reward Time (Dynamic Calculation)
+        $dailyRewardTimeLimit = $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : 45;
+        $timeRewardPerQuestion = $child->time_reward_per_question ? (int) $child->time_reward_per_question : 1;
+        $todayCorrectCount = (int) $todayAttempts->sum('correct_count');
+
+        $calculatedEarned = $timeRewardPerQuestion * $todayCorrectCount;
+        $earnedRewardMinutes = min($dailyRewardTimeLimit, $calculatedEarned);
+        $totalRewardMinutes = $dailyRewardTimeLimit;
+
         $rewardTimeData = [
-            'earned_minutes' => 25, // Static as requested
-            'total_minutes'  => $rewardTimeLimit,
-            'display_text'   => "25 / {$rewardTimeLimit} Min",
+            'earned_minutes' => (int) $earnedRewardMinutes,
+            'total_minutes'  => (int) $totalRewardMinutes,
+            'display_text'   => "{$earnedRewardMinutes} / {$totalRewardMinutes} Min",
         ];
 
         // 4. Daily / Weekly Streak (Monday to Sunday of current week)
         $startOfWeek = now()->startOfWeek(); // Monday
-        $todayStr = now()->toDateString();
 
         $weekDays = [];
         $dayInitials = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -281,16 +297,7 @@ class ChildController extends Controller
             ];
         }
 
-        // 5. Today's Quizzes
-        $todayAttempts = QuizAttempt::where('child_id', $child->id)
-            ->where('played_date', $todayStr)
-            ->with('subject')
-            ->latest()
-            ->get();
-
-        $quizzesPerDay = $child->quizzes_per_day ? (int) $child->quizzes_per_day : 5;
-        $playedTodayCount = $todayAttempts->count();
-        $quizzesLeft = max(0, $quizzesPerDay - $playedTodayCount);
+        // 5. Today's Quizzes List
 
         $todayPlayedList = $todayAttempts->map(function ($attempt) use ($child) {
             return [
@@ -497,13 +504,20 @@ class ChildController extends Controller
         }
 
         // --- Screen Time Tab ---
-        $earnedMinutes = $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : 45;
+        $dailyRewardTimeLimit = $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : 15;
+        $timeRewardPerQuestion = $child->time_reward_per_question ? (int) $child->time_reward_per_question : 1;
+
+        $todayCorrectCount = (int) QuizAttempt::where('child_id', $child->id)
+            ->where('played_date', now()->toDateString())
+            ->sum('correct_count');
+        
+        $totalEarnedToday = min($dailyRewardTimeLimit, $todayCorrectCount * $timeRewardPerQuestion);
         $usedMinutes = 30; // Static for now as requested in previous similar logic
 
         return response()->json([
             'status' => true,
             'data'   => [
-                'siblings'    => $siblings,
+                // 'siblings'    => $siblings,
                 'performance' => [
                     'this_week' => [
                         'quizzes_count'       => $weeklyQuizzesCount,
@@ -522,7 +536,7 @@ class ChildController extends Controller
                     'daily_breakdown'   => $dailyBreakdown,
                 ],
                 'screen_time' => [
-                    'earned_minutes' => $earnedMinutes,
+                    'earned_minutes' => $totalEarnedToday,
                     'used_minutes'   => $usedMinutes,
                 ],
             ]
@@ -534,13 +548,16 @@ class ChildController extends Controller
      */
     private function formatChild(Child $child): array
     {
+        $childQuizzes = QuizAttempt::where('child_id', $child->id)->count();
         return [
             'id'       => $child->id,
             'name'     => $child->name,
             'age'      => (int) $child->age,
-            'quiz_count' => QuizAttempt::where('child_id', $child->id)->count(),
+            'quiz_count' => $childQuizzes,
+            'level' => max(1, (int) floor($childQuizzes / 10)),
             'settings' => [
                 'daily_reward_time_limit' => $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : null,
+                'time_reward_per_question' => $child->time_reward_per_question ? (int) $child->time_reward_per_question : null,
                 'questions_per_quiz'      => $child->questions_per_quiz ? (int) $child->questions_per_quiz : null,
                 'quizzes_per_day'         => $child->quizzes_per_day ? (int) $child->quizzes_per_day : null,
                 'duration_per_quiz'       => $child->duration_per_quiz ? (int) $child->duration_per_quiz : null,
