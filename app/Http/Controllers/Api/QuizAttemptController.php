@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Milestone;
 use App\Models\QuizAttempt;
+use App\Notifications\MilestoneUnlockedNotification;
+use App\Notifications\QuizCompletedNotification;
+use App\Notifications\SubjectStruggleNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -110,6 +113,30 @@ class QuizAttemptController extends Controller
         $rewardTimeText = $moreMinutesNeeded > 0
             ? "{$totalEarnedToday} / {$totalRewardLimit} Min Reward Time. Only {$moreMinutesNeeded} MORE MINUTES!"
             : "{$totalEarnedToday} / {$totalRewardLimit} Min Reward Time. Daily Limit Reached!";
+
+        // Trigger Notifications
+        // 1. Quiz Completed
+        $quizCompletedNotification = new QuizCompletedNotification($child, $attempt);
+        $child->notify($quizCompletedNotification);
+        $child->parent->notify($quizCompletedNotification);
+
+        // 2. Milestone Unlocked
+        if ($isMilestoneUnlocked) {
+            $milestoneNotification = new MilestoneUnlockedNotification($child, $unlockedMilestone->name);
+            $child->notify($milestoneNotification);
+            $child->parent->notify($milestoneNotification);
+        }
+
+        // 3. Subject Struggle (If accuracy is below 40%)
+        if ($attempt->total_questions > 0) {
+            $accuracy = ($attempt->correct_count / $attempt->total_questions) * 100;
+            if ($accuracy < 40) {
+                $subjectName = $attempt->subject ? $attempt->subject->name : 'this subject';
+                $struggleNotification = new SubjectStruggleNotification($child, $subjectName);
+                $child->notify($struggleNotification);
+                $child->parent->notify($struggleNotification);
+            }
+        }
 
         return response()->json([
             'status'  => true,

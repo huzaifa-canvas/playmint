@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\QuestionController;
 use App\Http\Controllers\Api\QuizAttemptController;
 use App\Http\Controllers\Api\AvatarController;
 use App\Http\Controllers\Api\ChildController;
+use App\Http\Controllers\Api\NotificationController;
 
 
 Route::fallback(function(){
@@ -68,4 +69,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/children/dashboard/{id?}', [ChildController::class, 'dashboard']);
     Route::get('/children/control-centre/{id?}', [ChildController::class, 'controlCentre']);
     Route::get('/leaderboard', [ChildController::class, 'leaderboard']);
+
+    // ─── Notifications ──────────────────────────────────────────────
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
 });
