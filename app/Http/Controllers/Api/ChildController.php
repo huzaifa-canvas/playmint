@@ -502,6 +502,7 @@ class ChildController extends Controller
                 $acc = $item->sum_total > 0 ? round(($item->sum_correct / $item->sum_total) * 100) : 0;
                 return [
                     'name'                => $item->subject ? $item->subject->name : 'Unknown',
+                    'icon'                => $item->subject ? $item->subject->icon : '/',
                     'accuracy_percentage' => $acc,
                 ];
             });
