@@ -468,6 +468,21 @@ class ChildController extends Controller
         $weeklyDurationSecs = $weeklyAttempts->sum('duration');
         $weeklyStudyTimeHours = round($weeklyDurationSecs / 3600, 1);
 
+        // Subject Breakdown (This Week)
+        $weeklySubjectBreakdown = QuizAttempt::where('child_id', $child->id)
+            ->where('played_date', '>=', $startOfWeek)
+            ->with('subject')
+            ->select('subject_id', DB::raw('SUM(correct_count) as sum_correct'), DB::raw('SUM(total_questions) as sum_total'))
+            ->groupBy('subject_id')
+            ->get()
+            ->map(function ($item) {
+                $acc = $item->sum_total > 0 ? round(($item->sum_correct / $item->sum_total) * 100) : 0;
+                return [
+                    'name'                => $item->subject ? $item->subject->name : 'Unknown',
+                    'accuracy_percentage' => $acc,
+                ];
+            });
+
         // All Time
         $allAttempts = QuizAttempt::where('child_id', $child->id)->get();
         $allTotalQuestions = $allAttempts->sum('total_questions');
@@ -527,6 +542,7 @@ class ChildController extends Controller
                         'quizzes_count'       => $weeklyQuizzesCount,
                         'accuracy_percentage' => $weeklyAccuracy,
                         'study_time_hours'    => $weeklyStudyTimeHours,
+                        'subjects'            => $weeklySubjectBreakdown,
                     ],
                     'all_time' => [
                         'accuracy_percentage' => $allAccuracy,
