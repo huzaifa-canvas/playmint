@@ -127,4 +127,38 @@ class NotificationController extends Controller
             'message' => 'Notification deleted.'
         ]);
     }
+
+    /**
+     * Get notification count (total and unread).
+     */
+    public function count(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($request->has('child_id')) {
+            $child = $user->children()->find($request->child_id);
+            
+            if (!$child) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Child not found or unauthorized.'
+                ], 404);
+            }
+
+            $total = $child->notifications()->count();
+            $unread = $child->unreadNotifications()->count();
+        } else {
+            // Parent's notifications
+            $total = $user->notifications()->count();
+            $unread = $user->unreadNotifications()->count();
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => [
+                'total' => $total,
+                'unread' => $unread,
+            ]
+        ]);
+    }
 }
