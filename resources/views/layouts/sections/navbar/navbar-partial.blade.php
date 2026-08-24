@@ -108,18 +108,8 @@
           <div class="dropdown-divider my-1 mx-n2"></div>
         </li>
         <li>
-          <a class="dropdown-item"
-            href="javascript:void(0);">
-            <i class="icon-base ti tabler-user me-3 icon-md"></i><span class="align-middle">My Profile</span> </a>
-        </li>
-
-        <li>
-          <a class="dropdown-item" href="javascript:void(0);">
-            <span class="d-flex align-items-center align-middle">
-              <i class="flex-shrink-0 icon-base ti tabler-file-dollar me-3 icon-md"></i><span
-                class="flex-grow-1 align-middle">Billing</span>
-              <span class="flex-shrink-0 badge bg-danger d-flex align-items-center justify-content-center">4</span>
-            </span>
+          <a class="dropdown-item" href="{{ route('admin.profile.edit') }}">
+            <i class="icon-base ti tabler-user me-3 icon-md"></i><span class="align-middle">My Profile</span> 
           </a>
         </li>
 

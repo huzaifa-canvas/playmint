@@ -57,6 +57,13 @@ class AuthController extends Controller
             ]);
         }
 
+        if (!$user->is_active) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Your account has been suspended. Please contact support.',
+            ], 403);
+        }
+
         $token = $user->createToken('mobile-app')->plainTextToken;
 
         return response()->json([

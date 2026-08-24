@@ -12,9 +12,11 @@ Route::get('/', function () {
 });
 
 Route::prefix('admin')->middleware(['auth'])->group(function () {
-    Route::get('/', function () {
-        return view('content.pages.pages-home');
-    })->name('pages-home');
+    Route::get('/', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('pages-home');
+
+    // Profile
+    Route::get('profile', [\App\Http\Controllers\Admin\ProfileController::class, 'edit'])->name('admin.profile.edit');
+    Route::put('profile', [\App\Http\Controllers\Admin\ProfileController::class, 'update'])->name('admin.profile.update');
 
     // User Management
     Route::get('user/list', [UserController::class, 'index'])->name('app-user-list');
@@ -23,6 +25,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::get('user/edit/{id}', [UserController::class, 'edit'])->name('app-user-edit');
     Route::put('user/update/{id}', [UserController::class, 'update'])->name('app-user-update');
     Route::delete('user/delete/{id}', [UserController::class, 'destroy'])->name('app-user-delete');
+    Route::post('user/toggle-status/{id}', [UserController::class, 'toggleStatus'])->name('app-user-toggle-status');
 
     // Subjects
     Route::get('subjects', [\App\Http\Controllers\Admin\SubjectController::class, 'index'])->name('admin.subjects.index');

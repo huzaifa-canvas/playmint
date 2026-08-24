@@ -11,7 +11,24 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $users = User::latest()->paginate(15);
+        $query = User::with('children')->latest();
+
+        // Search by name or email
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $status = $request->status === 'active' ? 1 : 0;
+            $query->where('is_active', $status);
+        }
+
+        $users = $query->paginate(15)->appends($request->all());
         $totalUsers = User::count();
 
         return view('content.apps.app-user-list', compact('users', 'totalUsers'));
@@ -34,6 +51,7 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'is_active' => true,
         ]);
 
         return redirect()->route('app-user-list')->with('success', 'User created successfully.');
@@ -77,5 +95,21 @@ class UserController extends Controller
 
         $user->delete();
         return redirect()->back()->with('success', 'User deleted successfully.');
+    }
+
+    public function toggleStatus($id)
+    {
+        $user = User::findOrFail($id);
+        
+        // Prevent toggling yourself
+        if ($user->id === auth()->id()) {
+            return redirect()->back()->with('error', 'You cannot change your own status.');
+        }
+
+        $user->is_active = !$user->is_active;
+        $user->save();
+
+        $status = $user->is_active ? 'activated' : 'suspended';
+        return redirect()->back()->with('success', "User successfully {$status}.");
     }
 }
