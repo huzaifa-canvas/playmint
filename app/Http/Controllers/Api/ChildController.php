@@ -600,6 +600,7 @@ class ChildController extends Controller
             'age'      => (int) $child->age,
             'quiz_count' => $childQuizzes,
             'level' => max(1, (int) floor($childQuizzes / 10)),
+            'remaining_time' => $child->remaining_reward_seconds,
             'today_activity' => [
                 'quizzes'     => $todayQuizzesCount,
                 'correct'     => $todayCorrectCount,
