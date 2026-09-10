@@ -73,7 +73,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // ─── Reward Time ────────────────────────────────────────────────
     Route::get('/children/{id}/reward-time', [RewardTimeController::class, 'show']);
-    Route::patch('/children/{id}/reward-time/stop', [RewardTimeController::class, 'stop']);
+    Route::post('/children/{id}/reward-time/stop', [RewardTimeController::class, 'stop']);
 
     // ─── Notifications ──────────────────────────────────────────────
     Route::get('/notifications', [NotificationController::class, 'index']);
