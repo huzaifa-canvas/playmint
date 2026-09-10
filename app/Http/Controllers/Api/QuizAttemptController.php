@@ -114,6 +114,33 @@ class QuizAttemptController extends Controller
             ? "{$totalEarnedToday} / {$totalRewardLimit} Min Reward Time. Only {$moreMinutesNeeded} MORE MINUTES!"
             : "{$totalEarnedToday} / {$totalRewardLimit} Min Reward Time. Daily Limit Reached!";
 
+        // --- Update Remaining Reward Seconds on Child ---
+        $thisQuizEarnedMinutes = min(
+            $dailyRewardTimeLimit,
+            (int) $request->correct_count * $timeRewardPerQuestion
+        );
+        $thisQuizEarnedSeconds = $thisQuizEarnedMinutes * 60;
+        $dailyLimitSeconds = $dailyRewardTimeLimit * 60;
+
+        $todayStr = now()->toDateString();
+        $isSameDay = $child->reward_date && $child->reward_date->toDateString() === $todayStr;
+
+        if ($isSameDay) {
+            // Same day: add earned seconds to existing remaining
+            $newRemaining = (int) $child->remaining_reward_seconds + $thisQuizEarnedSeconds;
+        } else {
+            // New day: reset to only this quiz's earned seconds
+            $newRemaining = $thisQuizEarnedSeconds;
+        }
+
+        // Enforce daily limit
+        $newRemaining = min($newRemaining, $dailyLimitSeconds);
+
+        $child->update([
+            'remaining_reward_seconds' => $newRemaining,
+            'reward_date'              => $todayStr,
+        ]);
+
         // Trigger Notifications
         // 1. Quiz Completed
         $quizCompletedNotification = new QuizCompletedNotification($child, $attempt);
@@ -158,8 +185,9 @@ class QuizAttemptController extends Controller
                 'total_minutes'         => $totalRewardLimit,
                 'more_minutes_needed'   => $moreMinutesNeeded,
                 'reward_time_text'      => $rewardTimeText,
-                'is_milestone_unlocked' => $isMilestoneUnlocked,
-                'milestone_data'        => $milestoneData,
+                'is_milestone_unlocked'       => $isMilestoneUnlocked,
+                'milestone_data'              => $milestoneData,
+                'remaining_reward_seconds'    => $newRemaining,
             ],
         ], 201);
     }

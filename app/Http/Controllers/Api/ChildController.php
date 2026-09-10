@@ -570,12 +570,49 @@ class ChildController extends Controller
     private function formatChild(Child $child): array
     {
         $childQuizzes = QuizAttempt::where('child_id', $child->id)->count();
+
+        // Calculate Today's Stats
+        $todayStr = now()->toDateString();
+        $todayAttempts = QuizAttempt::where('child_id', $child->id)->where('played_date', $todayStr)->get();
+        $todayQuizzesCount = $todayAttempts->count();
+        $todayCorrectCount = (int) $todayAttempts->sum('correct_count');
+        $todayTotalQuestions = (int) $todayAttempts->sum('total_questions');
+        $todayAccuracy = $todayTotalQuestions > 0 ? round(($todayCorrectCount / $todayTotalQuestions) * 100) : 0;
+
+        // Streak Calculation (consecutive days played ending today or yesterday)
+        $streakDays = 0;
+        $checkDate = now();
+        $todayPlayed = QuizAttempt::where('child_id', $child->id)->where('played_date', $checkDate->toDateString())->exists();
+        if (!$todayPlayed) {
+            $checkDate = $checkDate->subDay();
+        }
+        while (QuizAttempt::where('child_id', $child->id)->where('played_date', $checkDate->toDateString())->exists()) {
+            $streakDays++;
+            $checkDate = $checkDate->subDay();
+        }
+
+        // Used time (static for now: 25 minutes)
+        $usedTimeMin = 25;
+
         return [
             'id'       => $child->id,
             'name'     => $child->name,
             'age'      => (int) $child->age,
             'quiz_count' => $childQuizzes,
             'level' => max(1, (int) floor($childQuizzes / 10)),
+            'today_activity' => [
+                'quizzes'     => $todayQuizzesCount,
+                'correct'     => $todayCorrectCount,
+                'streak'      => $streakDays,
+                'streak_text' => "{$streakDays} Days",
+            ],
+            'today_summary' => [
+                'used_time'           => $usedTimeMin,
+                'used_today'          => "{$usedTimeMin} Min",
+                'quizzes'             => $todayQuizzesCount,
+                'accuracy'            => $todayAccuracy,
+                'accuracy_percentage' => "{$todayAccuracy}%",
+            ],
             'settings' => [
                 'daily_reward_time_limit' => $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : null,
                 'time_reward_per_question' => $child->time_reward_per_question ? (int) $child->time_reward_per_question : null,

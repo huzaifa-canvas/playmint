@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\QuizAttemptController;
 use App\Http\Controllers\Api\AvatarController;
 use App\Http\Controllers\Api\ChildController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\RewardTimeController;
 
 
 Route::fallback(function(){
@@ -69,6 +70,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/children/dashboard/{id?}', [ChildController::class, 'dashboard']);
     Route::get('/children/control-centre/{id?}', [ChildController::class, 'controlCentre']);
     Route::get('/leaderboard', [ChildController::class, 'leaderboard']);
+
+    // ─── Reward Time ────────────────────────────────────────────────
+    Route::get('/children/{id}/reward-time', [RewardTimeController::class, 'show']);
+    Route::patch('/children/{id}/reward-time/stop', [RewardTimeController::class, 'stop']);
 
     // ─── Notifications ──────────────────────────────────────────────
     Route::get('/notifications', [NotificationController::class, 'index']);
