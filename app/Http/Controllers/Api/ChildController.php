@@ -569,10 +569,18 @@ class ChildController extends Controller
      */
     private function formatChild(Child $child): array
     {
+        $todayStr = now()->toDateString();
+
+        // Reset remaining reward seconds to 0 if reward_date is not today
+        if (!$child->reward_date || $child->reward_date->toDateString() !== $todayStr) {
+            $child->remaining_reward_seconds = 0;
+            $child->reward_date = $todayStr;
+            $child->save();
+        }
+
         $childQuizzes = QuizAttempt::where('child_id', $child->id)->count();
 
         // Calculate Today's Stats
-        $todayStr = now()->toDateString();
         $todayAttempts = QuizAttempt::where('child_id', $child->id)->where('played_date', $todayStr)->get();
         $todayQuizzesCount = $todayAttempts->count();
         $todayCorrectCount = (int) $todayAttempts->sum('correct_count');
@@ -591,8 +599,14 @@ class ChildController extends Controller
             $checkDate = $checkDate->subDay();
         }
 
-        // Used time (static for now: 25 minutes)
-        $usedTimeMin = 25;
+        // Used time (dynamic calculation: earned reward minus remaining reward seconds)
+        $dailyRewardTimeLimit = $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : 45;
+        $timeRewardPerQuestion = $child->time_reward_per_question ? (int) $child->time_reward_per_question : 1;
+        $earnedRewardMinutes = min($dailyRewardTimeLimit, $timeRewardPerQuestion * $todayCorrectCount);
+        $earnedRewardSeconds = $earnedRewardMinutes * 60;
+        $remainingRewardSeconds = (int) $child->remaining_reward_seconds;
+        $usedRewardSeconds = max(0, $earnedRewardSeconds - $remainingRewardSeconds);
+        $usedTimeMin = (int) round($usedRewardSeconds / 60);
 
         return [
             'id'       => $child->id,
@@ -600,7 +614,7 @@ class ChildController extends Controller
             'age'      => (int) $child->age,
             'quiz_count' => $childQuizzes,
             'level' => max(1, (int) floor($childQuizzes / 10)),
-            'remaining_time' => $child->remaining_reward_seconds,
+            'remaining_time' => (int) $child->remaining_reward_seconds,
             'today_activity' => [
                 'quizzes'     => $todayQuizzesCount,
                 'correct'     => $todayCorrectCount,
