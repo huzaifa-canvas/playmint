@@ -50,7 +50,7 @@ class RewardTimeController extends Controller
             'status'                   => true,
             'remaining_reward_seconds' => $remainingSeconds,
             'remaining_display'        => $displayText,
-            'earn_time'                => $earnedRewardMinutes,
+            'earn_time'                => (int) round($earnedRewardMinutes / 60),
             'earned_today'             => "{$earnedRewardMinutes} Min",
             'reward_date'              => $child->reward_date ? $child->reward_date->toDateString() : null,
         ]);
