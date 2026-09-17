@@ -615,7 +615,7 @@ class ChildController extends Controller
             'quiz_count' => $childQuizzes,
             'level' => max(1, (int) floor($childQuizzes / 10)),
             'remaining_time' => (int) $child->remaining_reward_seconds,
-            'earn_time'           => (int) round($earnedRewardMinutes / 60),
+            'earn_time'           => (int) round($earnedRewardMinutes * 60),
             'earned_today'        => "{$earnedRewardMinutes} Min",
             'today_activity' => [
                 'quizzes'     => $todayQuizzesCount,
