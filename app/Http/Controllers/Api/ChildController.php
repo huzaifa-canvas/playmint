@@ -624,6 +624,8 @@ class ChildController extends Controller
             'today_summary' => [
                 'used_time'           => $usedTimeMin,
                 'used_today'          => "{$usedTimeMin} Min",
+                'earn_time'           => $earnedRewardMinutes,
+                'earned_today'        => "{$earnedRewardMinutes} Min",
                 'quizzes'             => $todayQuizzesCount,
                 'accuracy'            => $todayAccuracy,
                 'accuracy_percentage' => "{$todayAccuracy}%",

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\QuizAttempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,10 +22,11 @@ class RewardTimeController extends Controller
             return response()->json(['status' => false, 'message' => 'Child not found.'], 404);
         }
 
+        $todayStr = now()->toDateString();
         $remainingSeconds = (int) $child->remaining_reward_seconds;
 
         // If reward_date is not today, the reward has expired (new day = reset)
-        if (!$child->reward_date || $child->reward_date->toDateString() !== now()->toDateString()) {
+        if (!$child->reward_date || $child->reward_date->toDateString() !== $todayStr) {
             $remainingSeconds = 0;
         }
 
@@ -35,10 +37,21 @@ class RewardTimeController extends Controller
             ? "{$minutes} Min {$seconds} Sec"
             : "{$minutes} Min";
 
+        // Earned reward time today calculation
+        $todayCorrectCount = (int) QuizAttempt::where('child_id', $child->id)
+            ->where('played_date', $todayStr)
+            ->sum('correct_count');
+
+        $dailyRewardTimeLimit = $child->daily_reward_time_limit ? (int) $child->daily_reward_time_limit : 45;
+        $timeRewardPerQuestion = $child->time_reward_per_question ? (int) $child->time_reward_per_question : 1;
+        $earnedRewardMinutes = min($dailyRewardTimeLimit, $timeRewardPerQuestion * $todayCorrectCount);
+
         return response()->json([
             'status'                   => true,
             'remaining_reward_seconds' => $remainingSeconds,
             'remaining_display'        => $displayText,
+            'earn_time'                => $earnedRewardMinutes,
+            'earned_today'             => "{$earnedRewardMinutes} Min",
             'reward_date'              => $child->reward_date ? $child->reward_date->toDateString() : null,
         ]);
     }
